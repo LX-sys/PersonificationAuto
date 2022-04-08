@@ -350,10 +350,10 @@ class PersonificationAuto(object):
         err_bool = False
         receive_err = None  # 接收错误信息
         try:
-
-            self.__addRackingRath(self.currentTime(),
-                                  func_str_name,
-                                  path)
+            if is_stop:
+                self.__addRackingRath(self.currentTime(),
+                                      func_str_name,
+                                      path)
 
             self.__findTemplate(func_str_name, path, start_time, end_time, note,is_stop=is_stop)
             if is_stop and self.__isRacking():
@@ -362,7 +362,7 @@ class PersonificationAuto(object):
             err_bool = True
             receive_err = e
         finally:
-            self.__errorDisplay(err_bool,receive_err,is_stop= False if err_bool else True)
+            self.__errorDisplay(err_bool,receive_err,is_stop= True if err_bool else False)
             
     # 自动匹配
     def autoMatch(self,paths_type,paths):
@@ -375,6 +375,8 @@ class PersonificationAuto(object):
         :param path: 元素的匹配路径
         :return:
         '''
+        err_bool = False
+        receive_err = None  # 接收错误信息
         # 调用函数列表
         functools = {
             "id":self.id,
@@ -385,16 +387,24 @@ class PersonificationAuto(object):
             "link text":self.linkText,
             "partial link text":self.linkTextPartial
         }
-
+        self.__addRackingRath(self.currentTime(),
+                              "autoMatch",
+                              (paths_type,paths))
         # 如果该参数是str,则把它变成长度为1的列表
         if isinstance(paths_type,str):
             paths_type = [paths_type]
 
+
         for type_ in paths_type:
-            try:
-                functools[type_](paths,is_stop=False)
-            except:
-                pass
+            functools[type_](paths, is_stop=False)
+        #     try:
+        #         functools[type_](paths,is_stop=False)
+        #     except Exception as e:
+        #         err_bool = True
+        #         receive_err = e
+        # print("=============",receive_err)
+        # if self.__isRacking():
+        #     self.__showCurrentRacking()
         return self
 
     def id(self,path,start_time=None,end_time=None,note="",is_stop=True):
@@ -1032,6 +1042,7 @@ pa.maxWin()
 pa.get(r"D:\code\my_html\automationCode.html")
 # pa.get("/Users/lx/Documents/PersonificationAuto/test.html")
 # pa.autoMatch(["xpath",'id'],'myselect')
-pa.id("myselect")
-# pa.moveTo()
+# pa.id("myselect")
+pa.autoMatch(["xpath",'id'],'[myselect')
+pa.moveTo()
 pa.wait(2,4)
