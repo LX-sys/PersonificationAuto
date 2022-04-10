@@ -11,6 +11,7 @@
 '''
 import re
 import os
+import subprocess
 import sys
 import time
 import json
@@ -22,7 +23,9 @@ import traceback
 import win32com.client
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
-
+# os.system("chrome.exe")
+# os.popen(cmd)
+# subprocess.Popen(cmd)
 # ----------------------------------------------------------------
 
 # 移动系列

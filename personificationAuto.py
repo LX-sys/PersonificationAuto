@@ -7,15 +7,24 @@
 '''
 
     拟人自动化操作库
+    接管：
+   终端执行 chrome.exe --remote-debugging-port=9222 --user-data-dir="D:\code\my_python\PersonificationAuto\test_selenium"
+   options参数配置下面
+   op = {
+    # "add_experimental_option":[("debuggerAddress","127.0.0.1:9222")]
+}
 '''
 from __future__ import print_function
+
+import os.path
+
 from header import (
     sys,
     time,
     math,
     random,
     datetime,
-    # win32com,
+    win32com,
     pyautogui,
     webdriver,
 )
@@ -59,16 +68,14 @@ class PersonificationAuto(object):
             self.__driver = driver
         elif options:
             self.__chromeOptions = webdriver.ChromeOptions()
-            self.__chromeOptions.add_experimental_option('prefs', prefs)
-            # for opt in options:
-            #     self.__chromeOptions.add_argument(opt)
-            # self.__driver = webdriver.Chrome(executable_path=executable_path, options=self.__chromeOptions)
+            # self.__chromeOptions.add_experimental_option('prefs', prefs)
             for k,v in options.items():
-                if k == "add_argument":
-                    self.__chromeOptions.add_argument(v)
-                elif k == "add_experimental_option":
-                    if isinstance(v,tuple):
-                        self.__chromeOptions.add_experimental_option(*v)
+                for value in v:
+                    if k == "add_argument":
+                        self.__chromeOptions.add_argument(value)
+                    if k == "add_experimental_option" and isinstance(value,tuple):
+                        self.__chromeOptions.add_experimental_option(*value)
+            self.__driver = webdriver.Chrome(executable_path=executable_path,options=self.__chromeOptions)
         else:
             options = webdriver.ChromeOptions()
             options.add_experimental_option('prefs', prefs)
@@ -89,7 +96,7 @@ class PersonificationAuto(object):
         # 默认鼠标移动速度
         self.__mouse_speed = [0.1,0.2]
         # 大漠
-        # self.__dm = win32com.client.Dispatch('dm.dmsoft')
+        self.__dm = win32com.client.Dispatch('dm.dmsoft')
         # 随机等待随机
         self.__start_time, self.__end_time = start_time,end_time
         # 浏览器窗口索引
@@ -105,6 +112,7 @@ class PersonificationAuto(object):
             self.__max_limit = None
         # 记录输入sendkeys的值,用于对比
         self._old_sendkeys_value = None
+
 
     def lookOptionList(self):
         '''
@@ -259,6 +267,7 @@ class PersonificationAuto(object):
             如果是多个元素,则类型是list
         :return:
         '''
+
         return self.__per_ele
 
     def driver(self):
@@ -269,6 +278,7 @@ class PersonificationAuto(object):
             if len(ele) == 1:
                 self.__per_ele = ElementPosition(self.__driver, ele[0])
                 return self
+            # 多个元素拆解在包装
             self.__per_ele = []
             for e in ele:
                 self.__per_ele.append(ElementPosition(self.__driver,e))
@@ -334,8 +344,8 @@ class PersonificationAuto(object):
                 raise TypeError("No elements were matched,\"{}\"\n".format(path))
 
     #  递归显示代码错误
-    def __errorDisplay(self,err_bool,receive_err,is_stop=False):
-        if not is_stop and self.__isRacking():
+    def __errorDisplay(self,err_bool,receive_err,is_stop=True):
+        if is_stop and self.__isRacking():
             self.__showCurrentRacking(is_func_err=err_bool)
             exc_type, exc_value, exc_traceback_obj = sys.exc_info()
             limit = self.__max_limit
@@ -461,7 +471,7 @@ class PersonificationAuto(object):
             if trend_mode == PersonificationAuto.INCREASING | PersonificationAuto.DIMINISHING:
                 time.sleep(self.__getRaodomMuseSpeed() / random.uniform(1.0,3.0))
 
-    def moveTo(self,x=None,y=None,_time=None,is_stop=False):
+    def moveTo(self,x=None,y=None,_time=None,is_stop=True):
         '''
             如果不传值,可以自动计算位置,移动的时间可以跟随年龄而变化
         :param x: 
@@ -476,10 +486,10 @@ class PersonificationAuto(object):
             try: # 检测元素是否能正常使用
                 x = self.element().x()
                 y = self.element().y()
-                self.__addRackingRath(self.currentTime(),
-                                      "moveTo",
-                                      (x, y))
-                if not is_stop and self.__isRacking():
+                if is_stop and self.__isRacking():
+                    self.__addRackingRath(self.currentTime(),
+                                          "moveTo",
+                                          (x, y))
                     self.__showCurrentRacking()
             except Exception as e:
                 err_bool = True
@@ -488,12 +498,12 @@ class PersonificationAuto(object):
                                       "moveTo",
                                       (x, y))
             finally:
-                self.__errorDisplay(err_bool, receive_err,is_stop= False if err_bool else True)
+                self.__errorDisplay(err_bool, receive_err,is_stop= True if err_bool else False)
         else:
             self.__addRackingRath(self.currentTime(),
                                   "moveTo",
                                   (x, y))
-            if not is_stop and self.__isRacking():
+            if is_stop and self.__isRacking():
                 self.__showCurrentRacking()
         if not _time:
             _time = self.__getRaodomMuseSpeed()
@@ -558,17 +568,16 @@ class PersonificationAuto(object):
                                   func_name,
                                   None)
         if is_move:
-            self.moveTo(is_stop=True)
+            self.moveTo(is_stop=False)
         if number > 1:
             for _ in range(number):
                 # self.__dm.LeftClick()
-                self.click(is_stop=True)
-                self.wait(start_time, end_time, is_stop=True)
+                self.click(is_stop=False)
+                self.wait(start_time, end_time, is_stop=False)
             return
         click_f()
-        if not is_stop:
-            if self.__isRacking():
-                self.__showCurrentRacking()
+        if is_stop and self.__isRacking():
+            self.__showCurrentRacking()
 
     def click(self,number=1,start_time=0.2,end_time=0.4,is_move=True,is_stop=True):
         '''
@@ -1022,19 +1031,34 @@ class PersonificationAuto(object):
             # 当前2.7小bug
             # return self.element()
             return [self.element()][item]
-    
+
     def __len__(self):
         return self.elementNumber()
 
+    def openTakeOver(self):
+        path = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(path,"take_over")
 
-pa = PersonificationAuto(
-    # executable_path="/Users/lx/Documents/PersonificationAuto/chromedriver",
-    is_tracking_path=True)
-pa.setAge(18)
-pa.maxWin()
-# pa.get("https://www.runoob.com/sitemap")
-# mac下加载本地网页加file://
-pa.get(r"D:\code\my_html\automationCode.html")
-pa.autoMatch(["xpath",'id'],'[myselect')
-pa.moveTo()
-pa.wait(2,4)
+        if not os.path.isdir(file_path):
+            os.mkdir(file_path)
+
+        # 执行无效
+        cmd = "chrome.exe --remote-debugging-port=9222 --user-data-dir=\"{}\"".format(file_path)
+        os.system(cmd)
+
+# chrome.exe --remote-debugging-port=9222 --user-data-dir="D:\code\my_python\PersonificationAuto\test_selenium"
+op = {
+    # "add_experimental_option":[("debuggerAddress","127.0.0.1:9222")]
+}
+# pa = PersonificationAuto(is_tracking_path=True)
+# # with open("stealth.min.js") as f:
+# #     js=f.read()
+# # pa.driver().execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument",{'source':js})
+# # pa.openTakeOver()
+# pa.setAge(18)
+# pa.maxWin()
+# # pa.get("https://www.runoob.com/sitemap")
+# # mac下加载本地网页加file://
+# # pa.get(r"D:\code\my_html\automationCode.html")
+# # pa.get("https://login.taobao.com/member/login.jhtml")
+#

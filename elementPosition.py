@@ -47,8 +47,8 @@ class ElementPosition(object):
     # 设置元素对象
     def setElement(self,ele=None,is_update_pos=True):
         self.__element = ele
-        # 获取一下元素的位置信息
-        if is_update_pos:
+        # 获取元素的位置信息,多个元素的情况下不获取
+        if not isinstance(ele,list) and is_update_pos:
             self.__updatePos()
         return self
 
@@ -105,8 +105,8 @@ class ElementPosition(object):
                                 return {top: (window.outerHeight - window.innerHeight) + Math.floor(r.top),
                                 left: Math.floor(r.left), elem_width: r.width, elem_height: r.height}"""
             res = self.__driver.execute_script(js_code, self.element())
-            width = res['elem_width']
-            height = res['elem_height']
+            width = round(res['elem_width'],2)
+            height = round(res['elem_height'],2)
             x = res['left'] + random.randint(int(res['elem_width']) // random.randint(2, 3),
                                              int(res['elem_width'] * 2 // 3))
             y = res['top'] + random.randint(int(res['elem_height']) // 3,
@@ -121,12 +121,12 @@ class ElementPosition(object):
             self.__updatePos()
         return {"x":self.x(),
                 "y":self.y(),
-                'width':self.width(),
-                'height':self.height()}
+                'width':round(self.width(),2),
+                'height':round(self.height(),2)}
 
     # 元素中心位置
     def centerPos(self):
-        return self.x()+self.width()//2,self.y()+self.height()//2
+        return self.x()+round(self.width(),2)//2,self.y()+round(self.height(),2)//2
 
     def x(self,is_cache=True):
         if is_cache:
@@ -196,7 +196,9 @@ class ElementPosition(object):
         elif item.lower() == "height" or item.lower() == "h":
             return self.height()
         else:
-            return self.__element[item]
+            if isinstance(self.__element,list):  # 如果是list则使用自身的类进行构建,为了提高速度,不获取信息
+                return ElementPosition(self.__driver,self.__element[item],is_update_pos=False)
+            return self.__element
 
     # 重载减法,得到两个元素之间的距离
     def __sub__(self, other):
@@ -209,11 +211,9 @@ class ElementPosition(object):
     # def equalPos(self,other):
     #     if self.x()
 
-
 if __name__ == '__main__':
     e = ElementPosition()
     e.setElement([1,2,3])
-
     for e_i in e:
         print(e_i)
         # print e_i
@@ -225,6 +225,3 @@ if __name__ == '__main__':
     # print e.elementNumber()
     # print e["x"],e["y"],e["width"],e["height"]
     # print e
-
-
-
