@@ -21,12 +21,7 @@ from header import (
 )
 from log import Log
 from elementPosition import ElementPosition
-from color import (
-    red,
-    blue,
-    green,
-    defaultColor,
-)
+from color import PrintColor
 
 # 拟人化操作类
 class PersonificationAuto(object):
@@ -192,23 +187,35 @@ class PersonificationAuto(object):
             fname = self.__tracking_path_list[-1]['fname']
             data = self.__tracking_path_list[-1]['data']
             if data is None:
-                print(defaultColor('----- [{}]').format(_time),end="")
-                if is_func_err:
-                    print(red(' <{}>').format(fname))
-                else:
-                    print(green(' <{}>').format(fname))
+                print(PrintColor.defaultColor('----- [{}]'.format(_time)),end="")
+                # print(defaultColor('----- [{}]').format(_time),end="")
+                PrintColor.printCColor(is_func_err,
+                                       ' <{}>'.format(fname),
+                                       ('red','green'))
+                # if is_func_err:
+                #     print(PrintColor.red(' <{}>').format(fname))
+                # else:
+                #     print(PrintColor.green(' <{}>').format(fname))
             elif isinstance(data,int) \
                     or isinstance(data,str) \
                     or isinstance(data,list) \
                     or isinstance(data,tuple) \
                     or (data[0] != 0 and data[1] != 0):
-                print(defaultColor('----- [{}]').format(_time), end="")
-                if is_func_err:
-                    print(red(' <{}>').format(fname),end="")
-                else:
-                    print(green(' <{}>').format(fname),end="")
-                print(defaultColor(' argv: '),end="")
-                print(blue('{}').format(data))
+                print(PrintColor.defaultColor('----- [{}]').format(_time), end="")
+                PrintColor.printCColor(is_func_err,
+                                       ' <{}>'.format(fname),
+                                       ('red', 'green'),end="")
+                PrintColor.printColor(
+                    [
+                        (' argv: ','defaultColor'),
+                        ('{}'.format(data),"blue")
+                    ])
+                # if is_func_err:
+                #     print(red(' <{}>').format(fname),end="")
+                # else:
+                #     print(green(' <{}>').format(fname),end="")
+                # print(defaultColor(' argv: '),end="")
+                # print(blue('{}').format(data))
 
     def __isRacking(self):
         return self.__tracking_path
@@ -339,7 +346,7 @@ class PersonificationAuto(object):
                 filename = co.co_filename
                 name = co.co_name
                 # 这句话格式可以实现报错后,在pycharm中点击跳转
-                print('\033[1;31;1m  File "%s", line %d, in <%s>\033[8m' % (filename, lineno, name))
+                print(PrintColor.red('  File "%s", line %d, in <%s>'% (filename, lineno, name)))
                 exc_traceback_obj = exc_traceback_obj.tb_next
                 n += 1
             if receive_err:  # 显示具体报错信息
@@ -958,7 +965,6 @@ class PersonificationAuto(object):
                 self.__showCurrentRacking()
         return self
 
-    
     # 获取select下拉框元素个数
     def selectGetNumber(self,match_way,value):
         if match_way == "id":
@@ -1019,17 +1025,6 @@ class PersonificationAuto(object):
     
     def __len__(self):
         return self.elementNumber()
-    
-    # def __iter__(self):
-    #     return self
-    #
-    # def __next__(self):
-    #     self.__eles_index += 1
-    #     if self.__eles_index >= self.len:
-    #         raise StopIteration()  # 触发异常,停止迭代
-    #     else:
-    #         self.setElement(self.elements()[self.__eles_index])
-    #         return self
 
 
 pa = PersonificationAuto(
@@ -1040,9 +1035,6 @@ pa.maxWin()
 # pa.get("https://www.runoob.com/sitemap")
 # mac下加载本地网页加file://
 pa.get(r"D:\code\my_html\automationCode.html")
-# pa.get("/Users/lx/Documents/PersonificationAuto/test.html")
-# pa.autoMatch(["xpath",'id'],'myselect')
-# pa.id("myselect")
 pa.autoMatch(["xpath",'id'],'[myselect')
 pa.moveTo()
 pa.wait(2,4)
